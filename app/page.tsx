@@ -756,7 +756,7 @@ const pricing = [
   {
     name: "Starter",
     description: "For small farms just getting started",
-    price: "29",
+    price: "9",
     features: [
       "Up to 5 sensors",
       "7-day data history",
@@ -768,7 +768,7 @@ const pricing = [
   {
     name: "Professional",
     description: "For growing agricultural operations",
-    price: "79",
+    price: "19",
     features: [
       "Up to 20 sensors",
       "30-day data history",
@@ -781,7 +781,7 @@ const pricing = [
   {
     name: "Enterprise",
     description: "For large-scale farming operations",
-    price: "199",
+    price: "59",
     features: [
       "Unlimited sensors",
       "1-year data history",

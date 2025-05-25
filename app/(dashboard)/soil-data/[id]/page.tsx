@@ -423,7 +423,7 @@ export default function SoilDataDetailPage() {
       </Tabs>
 
       <div className="mt-6">
-        <MLRecommendationCard soilDataId={id} isDetailView={true} />
+        <MLRecommendationCard soilDataId={Array.isArray(id) ? id[0] : id} isDetailView={true} />
       </div>
     </div>
   );

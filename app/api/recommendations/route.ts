@@ -16,6 +16,63 @@ const recommendationRequestSchema = z.object({
   soilDataId: z.string(),
 });
 
+// Define types for better TypeScript support
+interface SoilDataWithFarm {
+  id: string;
+  pH: number;
+  nitrogen: number;
+  phosphorus: number;
+  potassium: number;
+  moisture: number;
+  temperature: number;
+  organicMatter?: number;
+  conductivity?: number;
+  salinity?: number;
+  timestamp: Date;
+  farmId: string;
+  farm: {
+    id: string;
+    name: string;
+    location: string;
+    climate?: string;
+    userId: string;
+  };
+}
+
+interface WeatherDataItem {
+  temperature: number;
+  humidity: number;
+  precipitation: number;
+  conditions?: string;
+}
+
+interface RecommendationResult {
+  crops: string[];
+  score: number;
+  remarks: string;
+  fertilizers: {
+    recommendations: Array<{
+      type: string;
+      amount: string;
+      timing: string;
+    }>;
+  };
+  irrigation: {
+    schedule: string;
+    method: string;
+    amount: string;
+  };
+  pestManagement: {
+    potentialIssues: string[];
+    preventiveMeasures: string[];
+  };
+  expectedYield: {
+    crops: Record<string, { yield: string; unit: string }>;
+  };
+  carbonFootprint: number;
+  sustainabilityScore: number;
+}
+
 export async function POST(req: Request) {
   try {
     // Check authentication
@@ -106,8 +163,8 @@ export async function POST(req: Request) {
 
     // Generate AI recommendation
     const recommendation = await generateAIRecommendation(
-      soilData,
-      weatherData,
+      soilData as SoilDataWithFarm,
+      weatherData as WeatherDataItem[],
       regionalCrops
     );
 
@@ -243,84 +300,11 @@ export async function GET(request: Request) {
   }
 }
 
-// GET handler for a specific recommendation by ID
-export async function GET_ID(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const recommendationId = params.id;
-
-    const recommendation = await prisma.recommendation.findUnique({
-      where: {
-        id: recommendationId,
-        soilData: {
-          farm: {
-            userId: session.user.id,
-          },
-        },
-      },
-      include: {
-        soilData: {
-          select: {
-            id: true,
-            pH: true,
-            moisture: true,
-            temperature: true,
-            nitrogen: true,
-            phosphorus: true,
-            potassium: true,
-            organicMatter: true,
-            conductivity: true,
-            timestamp: true,
-            quality: true,
-            farm: {
-              select: {
-                id: true,
-                name: true,
-                location: true,
-              },
-            },
-            device: {
-              select: {
-                id: true,
-                name: true,
-                deviceType: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!recommendation) {
-      return NextResponse.json(
-        { error: "Recommendation not found" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ recommendation });
-  } catch (error) {
-    console.error("Error fetching recommendation:", error);
-    return NextResponse.json(
-      { error: "Error fetching recommendation" },
-      { status: 500 }
-    );
-  }
-}
-
 // Function to get information about crops commonly grown in a region
-async function getRegionalCrops(location: string) {
+async function getRegionalCrops(location: string): Promise<string[]> {
   // In a real system, this would query an agricultural database or API
   // For this example, we'll use some hardcoded data based on location
-  const regionMap = {
+  const regionMap: Record<string, string[]> = {
     Karnataka: ["Rice", "Millet", "Sugarcane", "Cotton", "Sunflower"],
     Punjab: ["Wheat", "Rice", "Cotton", "Sugarcane", "Maize"],
     Maharashtra: ["Cotton", "Sugarcane", "Soybeans", "Pulses", "Jowar"],
@@ -339,7 +323,11 @@ async function getRegionalCrops(location: string) {
 }
 
 // Function to generate AI recommendation using OpenAI
-async function generateAIRecommendation(soilData, weatherData, regionalCrops) {
+async function generateAIRecommendation(
+  soilData: SoilDataWithFarm,
+  weatherData: WeatherDataItem[],
+  regionalCrops: string[]
+): Promise<RecommendationResult> {
   try {
     // Prepare the data for the AI model
     const soilInfo = {
@@ -358,13 +346,17 @@ async function generateAIRecommendation(soilData, weatherData, regionalCrops) {
       weatherData.length > 0
         ? {
             avgTemperature:
-              weatherData.reduce((sum, data) => sum + data.temperature, 0) /
-              weatherData.length,
+              weatherData.reduce(
+                (sum: number, data: WeatherDataItem) => sum + data.temperature,
+                0
+              ) / weatherData.length,
             avgHumidity:
-              weatherData.reduce((sum, data) => sum + data.humidity, 0) /
-              weatherData.length,
+              weatherData.reduce(
+                (sum: number, data: WeatherDataItem) => sum + data.humidity,
+                0
+              ) / weatherData.length,
             totalPrecipitation: weatherData.reduce(
-              (sum, data) => sum + data.precipitation,
+              (sum: number, data: WeatherDataItem) => sum + data.precipitation,
               0
             ),
             recentConditions: weatherData[0]?.conditions,
@@ -436,8 +428,13 @@ Please provide comprehensive recommendations in the following JSON format:
       response_format: { type: "json_object" },
     });
 
-    // Parse the response
-    const recommendation = JSON.parse(response.choices[0].message.content);
+    // Parse the response - handle potential null value
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("Received empty response from OpenAI");
+    }
+
+    const recommendation = JSON.parse(content) as RecommendationResult;
 
     return recommendation;
   } catch (error) {

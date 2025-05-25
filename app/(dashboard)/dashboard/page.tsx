@@ -813,10 +813,7 @@ export default async function DashboardPage() {
 
         <TabsContent value="npk" className="space-y-4">
           <Suspense fallback={<div>Loading real-time data...</div>}>
-            <RealTimeNPKChart
-              farmId={data.farms[0]?.id || ""}
-              deviceId={data.farms[0]?.devices > 0 ? undefined : undefined}
-            />
+            <RealTimeNPKChart farmId={data.farms[0]?.id || ""} />
           </Suspense>
         </TabsContent>
       </Tabs>

@@ -156,7 +156,10 @@ export async function GET(request: Request) {
       const avgTemp =
         data.reduce((sum, d) => sum + d.temperature, 0) / data.length;
       if (avgTemp >= 18 && avgTemp <= 30) score += 20;
-      else if ((avgTemp >= 15 && avgTemp < 18) || (avgTemp > 30 && avgTemp <= 35))
+      else if (
+        (avgTemp >= 15 && avgTemp < 18) ||
+        (avgTemp > 30 && avgTemp <= 35)
+      )
         score += 15;
       else score += 5;
 
@@ -184,14 +187,14 @@ export async function GET(request: Request) {
       return parameters.map((param) => {
         const currentValue =
           currentSoilData.reduce(
-            (sum, d) => sum + d[param.parameter as keyof typeof d],
+            (sum, d) => sum + Number(d[param.parameter as keyof typeof d]),
             0
           ) / currentSoilData.length;
 
         const previousValue =
           previousSoilData.length > 0
             ? previousSoilData.reduce(
-                (sum, d) => sum + d[param.parameter as keyof typeof d],
+                (sum, d) => sum + Number(d[param.parameter as keyof typeof d]),
                 0
               ) / previousSoilData.length
             : 0;
@@ -261,7 +264,10 @@ export async function GET(request: Request) {
           (r) => r.soilData.farmId === farm.id
         );
         // In a real system, you would compare recommendations against actual outcomes
-        const recommendationAccuracy = farmRecommendations.length > 0 ? 85 + Math.floor(Math.random() * 10) : 90;
+        const recommendationAccuracy =
+          farmRecommendations.length > 0
+            ? 85 + Math.floor(Math.random() * 10)
+            : 90;
 
         // Calculate device reliability (mock data)
         const deviceReliability = 95 + Math.floor(Math.random() * 5);
@@ -299,7 +305,9 @@ export async function GET(request: Request) {
           title: "Declining Soil Health",
           description: `Your overall soil health score has decreased by ${Math.abs(
             healthChange
-          ).toFixed(1)}% in the last ${period}. Review your soil management practices.`,
+          ).toFixed(
+            1
+          )}% in the last ${period}. Review your soil management practices.`,
           priority: "high",
         });
       }
@@ -316,10 +324,12 @@ export async function GET(request: Request) {
 
           insights.push({
             id: String(insights.length + 2),
-            title: `${trend.parameter.charAt(0).toUpperCase() + trend.parameter.slice(1)} ${
-              trend.trend === "up" ? "Increase" : "Decrease"
-            }`,
-            description: `${trend.parameter.charAt(0).toUpperCase() + trend.parameter.slice(1)} has ${direction} by ${Math.abs(
+            title: `${
+              trend.parameter.charAt(0).toUpperCase() + trend.parameter.slice(1)
+            } ${trend.trend === "up" ? "Increase" : "Decrease"}`,
+            description: `${
+              trend.parameter.charAt(0).toUpperCase() + trend.parameter.slice(1)
+            } has ${direction} by ${Math.abs(
               trend.changePercent
             )}% in the last ${period}. ${
               trend.optimal
@@ -381,4 +391,4 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

@@ -52,22 +52,22 @@ export default function SoilDataPage() {
     const fetchData = async () => {
       try {
         // Fetch farms
-        const farmsResponse = await fetch('/api/farms');
+        const farmsResponse = await fetch("/api/farms");
         if (!farmsResponse.ok) {
-          throw new Error('Failed to fetch farms');
+          throw new Error("Failed to fetch farms");
         }
         const farmsData = await farmsResponse.json();
         setFarms(farmsData.farms);
 
         // Fetch soil data
-        const soilDataResponse = await fetch('/api/soil-data');
+        const soilDataResponse = await fetch("/api/soil-data");
         if (!soilDataResponse.ok) {
-          throw new Error('Failed to fetch soil data');
+          throw new Error("Failed to fetch soil data");
         }
         const soilDataResult = await soilDataResponse.json();
         setSoilData(soilDataResult.soilData);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch data');
+        setError(err instanceof Error ? err.message : "Failed to fetch data");
       } finally {
         setIsLoading(false);
       }
@@ -77,14 +77,15 @@ export default function SoilDataPage() {
   }, []);
 
   // Filter soil data by selected farm
-  const filteredSoilData = selectedFarm 
-    ? soilData.filter(data => data.farm?.id === selectedFarm)
+  const filteredSoilData = selectedFarm
+    ? soilData.filter((data) => data.farm?.id === selectedFarm)
     : soilData;
 
   // Get latest soil data reading for each farm for health status cards
-  const latestData = filteredSoilData.length > 0 
-    ? filteredSoilData[filteredSoilData.length - 1] 
-    : null;
+  const latestData =
+    filteredSoilData.length > 0
+      ? filteredSoilData[filteredSoilData.length - 1]
+      : null;
 
   // Helper function to get status color
   const getStatusColor = (status: string) => {
@@ -101,7 +102,9 @@ export default function SoilDataPage() {
   };
 
   if (isLoading) {
-    return <div className="flex justify-center items-center h-96">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-96">Loading...</div>
+    );
   }
 
   if (error) {
@@ -169,7 +172,9 @@ export default function SoilDataPage() {
             </Card>
             <Card>
               <CardHeader className="p-3">
-                <CardTitle className="text-sm font-medium">Nitrogen (N)</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Nitrogen (N)
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <p className="text-2xl font-bold">{latestData.nitrogen} ppm</p>
@@ -189,7 +194,9 @@ export default function SoilDataPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-3 pt-0">
-                <p className="text-2xl font-bold">{latestData.phosphorus} ppm</p>
+                <p className="text-2xl font-bold">
+                  {latestData.phosphorus} ppm
+                </p>
                 <p
                   className={`text-xs font-medium ${getStatusColor(
                     soilHealthStatus(latestData.phosphorus, "p")
@@ -201,7 +208,9 @@ export default function SoilDataPage() {
             </Card>
             <Card>
               <CardHeader className="p-3">
-                <CardTitle className="text-sm font-medium">Potassium (K)</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Potassium (K)
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <p className="text-2xl font-bold">{latestData.potassium} ppm</p>
@@ -225,13 +234,18 @@ export default function SoilDataPage() {
                     soilHealthStatus(latestData.moisture, "moisture")
                   )}`}
                 >
-                  {soilHealthStatus(latestData.moisture, "moisture").toUpperCase()}
+                  {soilHealthStatus(
+                    latestData.moisture,
+                    "moisture"
+                  ).toUpperCase()}
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="p-3">
-                <CardTitle className="text-sm font-medium">Temperature</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Temperature
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 <p className="text-2xl font-bold">{latestData.temperature}°C</p>
@@ -306,49 +320,94 @@ export default function SoilDataPage() {
             <TabsContent value="all" className="space-y-4">
               <SoilDataChart
                 data={filteredSoilData}
-                parameter="all"
+                parameter="pH"
                 title="All Soil Parameters"
                 description="Overview of all soil health indicators"
               />
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <SoilDataChart
+                  data={filteredSoilData}
+                  parameter="nitrogen"
+                  title="Nitrogen (N)"
+                  description="Optimal range: 30 - 60 ppm"
+                />
+                <SoilDataChart
+                  data={filteredSoilData}
+                  parameter="phosphorus"
+                  title="Phosphorus (P)"
+                  description="Optimal range: 20 - 40 ppm"
+                />
+                <SoilDataChart
+                  data={filteredSoilData}
+                  parameter="potassium"
+                  title="Potassium (K)"
+                  description="Optimal range: 150 - 250 ppm"
+                />
+                <SoilDataChart
+                  data={filteredSoilData}
+                  parameter="moisture"
+                  title="Soil Moisture"
+                  description="Optimal range: 50 - 75%"
+                />
+                <SoilDataChart
+                  data={filteredSoilData}
+                  parameter="temperature"
+                  title="Soil Temperature"
+                  description="Optimal range: 18 - 24°C"
+                />
+              </div>
             </TabsContent>
           </Tabs>
-          
+
           {/* Recent Soil Data & ML Recommendations */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">Recent Soil Data</h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filteredSoilData
-                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                .sort(
+                  (a, b) =>
+                    new Date(b.timestamp).getTime() -
+                    new Date(a.timestamp).getTime()
+                )
                 .slice(0, 6)
                 .map((data) => (
                   <Card key={data.id} className="overflow-hidden">
                     <CardHeader className="p-4">
                       <CardTitle className="text-md">
-                        {data.farm?.name || 'Unknown Farm'}
+                        {data.farm?.name || "Unknown Farm"}
                       </CardTitle>
                       <CardDescription>
-                        {data.device?.name || 'Unknown Device'} • {formatDate(data.timestamp)}
+                        {data.device?.name || "Unknown Device"} •{" "}
+                        {formatDate(data.timestamp)}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="p-4 pt-0 space-y-4">
                       <div className="grid grid-cols-3 gap-2">
                         <div>
                           <p className="text-sm text-muted-foreground">pH</p>
-                          <p className={`font-medium ${getStatusColor(soilHealthStatus(data.pH, "ph"))}`}>
+                          <p
+                            className={`font-medium ${getStatusColor(
+                              soilHealthStatus(data.pH, "ph")
+                            )}`}
+                          >
                             {data.pH.toFixed(1)}
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Moisture</p>
-                          <p className={`font-medium ${getStatusColor(soilHealthStatus(data.moisture, "moisture"))}`}>
+                          <p className="text-sm text-muted-foreground">
+                            Moisture
+                          </p>
+                          <p
+                            className={`font-medium ${getStatusColor(
+                              soilHealthStatus(data.moisture, "moisture")
+                            )}`}
+                          >
                             {data.moisture}%
                           </p>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Temp</p>
-                          <p className="font-medium">
-                            {data.temperature}°C
-                          </p>
+                          <p className="font-medium">{data.temperature}°C</p>
                         </div>
                       </div>
                       <div className="flex justify-between items-center">
@@ -358,7 +417,10 @@ export default function SoilDataPage() {
                             View Details
                           </Button>
                         </Link>
-                        <Link href={`/soil-data/${data.id}`} className="flex items-center text-primary text-sm font-medium">
+                        <Link
+                          href={`/soil-data/${data.id}`}
+                          className="flex items-center text-primary text-sm font-medium"
+                        >
                           <Leaf className="mr-1 h-4 w-4 text-green-500" />
                           Get Crop Recommendation
                         </Link>
@@ -374,7 +436,8 @@ export default function SoilDataPage() {
           <Leaf className="h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-xl font-semibold">No Soil Data Yet</h3>
           <p className="text-muted-foreground text-center max-w-md mb-6">
-            Connect your soil monitoring devices to start collecting data and receiving crop recommendations.
+            Connect your soil monitoring devices to start collecting data and
+            receiving crop recommendations.
           </p>
         </div>
       )}

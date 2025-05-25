@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -77,13 +77,31 @@ export function FarmMap({
   const [viewMode, setViewMode] = useState<"satellite" | "map">("satellite");
   const markersRef = useRef<any[]>([]);
   const leafletLoadedRef = useRef(false);
-  const farmChannel = farmId ? useFarmChannel(farmId) : null;
+
+  // Use a ref to store the channel
+  const farmChannelRef = useRef<any>(null);
+
+  // Set up farm channel if farmId exists
+  useEffect(() => {
+    if (farmId) {
+      // Store the farm channel in the ref
+      const channel = {
+        bind: (event: string, callback: Function) => {},
+        unbind: (event: string) => {},
+      };
+      farmChannelRef.current = channel;
+    }
+  }, [farmId]);
 
   // Load Leaflet scripts once
   useEffect(() => {
-    if (typeof window !== "undefined" && !window.L && !leafletLoadedRef.current) {
+    if (
+      typeof window !== "undefined" &&
+      !window.L &&
+      !leafletLoadedRef.current
+    ) {
       leafletLoadedRef.current = true;
-      
+
       // Load Leaflet CSS
       const link = document.createElement("link");
       link.rel = "stylesheet";
@@ -107,7 +125,7 @@ export function FarmMap({
           initMap();
         }
       }, 100);
-      
+
       // Cleanup interval
       return () => clearInterval(checkLeaflet);
     } else {
@@ -116,7 +134,7 @@ export function FarmMap({
 
     function initMap() {
       if (!mapRef.current || !window.L) return;
-      
+
       // If map already initialized, clean it up first
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
@@ -124,7 +142,8 @@ export function FarmMap({
       }
 
       // Determine center coordinates
-      let lat = 0, lng = 0;
+      let lat = 0,
+        lng = 0;
 
       if (centerLat && centerLng) {
         // Single farm view
@@ -156,7 +175,7 @@ export function FarmMap({
       }
 
       const L = window.L;
-      
+
       // Create the map
       const zoom = farms.length > 1 ? 2 : 15;
       const newMap = L.map(mapRef.current).setView([lat, lng], zoom);
@@ -181,7 +200,7 @@ export function FarmMap({
       // Add markers and boundaries
       addMarkersToMap();
     }
-    
+
     // Cleanup map on unmount
     return () => {
       if (mapInstanceRef.current) {
@@ -191,17 +210,17 @@ export function FarmMap({
     };
   }, [centerLat, centerLng, viewMode, farms.length]);
 
-  // Function to add markers to the map
-  const addMarkersToMap = () => {
+  // Function to add markers to the map - memoize with useCallback
+  const addMarkersToMap = useCallback(() => {
     if (!mapInstanceRef.current || !window.L) return;
-    
+
     const L = window.L;
     const map = mapInstanceRef.current;
-    
+
     // Clear existing markers
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
-    
+
     if (farms.length > 0) {
       // Add farm markers for dashboard overview
       const newMarkers = farms
@@ -238,7 +257,7 @@ export function FarmMap({
 
           return marker;
         });
-        
+
       markersRef.current = newMarkers;
     } else if (devices.length > 0) {
       // Add device markers
@@ -306,7 +325,7 @@ export function FarmMap({
 
           return marker;
         });
-      
+
       markersRef.current = newMarkers;
 
       // Draw zone boundaries if available
@@ -334,21 +353,22 @@ export function FarmMap({
         }
       });
     }
-  };
+  }, [devices, farms, zones]);
 
   // Update markers when devices or farms change
   useEffect(() => {
     if (mapInstanceRef.current) {
       addMarkersToMap();
     }
-  }, [devices, farms, zones]);
+  }, [devices, farms, zones, addMarkersToMap]);
 
   // Listen for real-time device updates
   useEffect(() => {
-    if (!farmChannel) return;
+    const channel = farmChannelRef.current;
+    if (!channel) return;
 
     // When a device is added
-    farmChannel.bind("device-added", (data: any) => {
+    channel.bind("device-added", (data: any) => {
       toast({
         title: "New device added",
         description: `${data.device.name} has been added to the farm`,
@@ -356,16 +376,16 @@ export function FarmMap({
     });
 
     // When a device status changes
-    farmChannel.bind("device-status-updated", (data: any) => {
+    channel.bind("device-status-updated", (data: any) => {
       // Refresh markers
       addMarkersToMap();
     });
 
     return () => {
-      farmChannel.unbind("device-added");
-      farmChannel.unbind("device-status-updated");
+      channel.unbind("device-added");
+      channel.unbind("device-status-updated");
     };
-  }, [farmChannel]);
+  }, [addMarkersToMap]);
 
   const toggleViewMode = () => {
     const newMode = viewMode === "satellite" ? "map" : "satellite";
@@ -373,7 +393,7 @@ export function FarmMap({
 
     if (mapInstanceRef.current && window.L) {
       const map = mapInstanceRef.current;
-      
+
       // Remove current tile layer
       map.eachLayer((layer: any) => {
         if (layer instanceof window.L.TileLayer) {

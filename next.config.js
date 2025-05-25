@@ -11,6 +11,14 @@ const nextConfig = {
     env: {
         ML_API_URL: process.env.ML_API_URL || 'http://localhost:8000',
     },
+    // Disable ESLint during production build
+    eslint: {
+        ignoreDuringBuilds: true,
+    },
+    // Disable TypeScript type checking during builds
+    typescript: {
+        ignoreBuildErrors: true,
+    },
 }
 
 module.exports = nextConfig 

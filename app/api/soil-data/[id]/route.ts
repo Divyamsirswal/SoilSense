@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/app/api/auth/auth-options";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
@@ -32,10 +32,7 @@ export async function GET(
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Get the soil data with all related data
@@ -74,4 +71,4 @@ export async function GET(
       { status: 500 }
     );
   }
-} 
+}

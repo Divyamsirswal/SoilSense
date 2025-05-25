@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import { formatDate, formatNumber } from "@/lib/utils";
 import { Suspense } from "react";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/app/api/auth/auth-options";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { OverviewCard } from "@/components/dashboard/overview-card";

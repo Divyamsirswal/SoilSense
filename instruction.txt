@@ -1,0 +1,2 @@
+-This is the complete folder for the fullstack application for our hackathon project 
+ -> member doing it  => Divyam Sirswal

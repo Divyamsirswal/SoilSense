@@ -1,0 +1,453 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// User model (extended for NextAuth)
+model User {
+    id                String    @id @default(cuid())
+    name              String?
+    email             String?   @unique
+    emailVerified     DateTime?
+    password          String?
+    image             String?
+    role              String    @default("USER") // USER, ADMIN, FARM_MANAGER
+    lastLogin         DateTime?
+    preferredLanguage String?   @default("en")
+    phoneNumber       String?
+    notificationPrefs Json? // Stores notification preferences
+    subscriptionTier  String    @default("FREE") // FREE, BASIC, PRO, ENTERPRISE
+    subscriptionEnds  DateTime?
+    createdAt         DateTime  @default(now())
+    updatedAt         DateTime  @updatedAt
+
+    accounts Account[]
+    sessions Session[]
+    farms    Farm[]
+    alerts   Alert[]
+    actions  Action[]
+    notes    Note[]
+    team     Team?     @relation(fields: [teamId], references: [id])
+    teamId   String?
+}
+
+// NextAuth models
+model Account {
+    id                String  @id @default(cuid())
+    userId            String
+    type              String
+    provider          String
+    providerAccountId String
+    refresh_token     String? @db.Text
+    access_token      String? @db.Text
+    expires_at        Int?
+    token_type        String?
+    scope             String?
+    id_token          String? @db.Text
+    session_state     String?
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([provider, providerAccountId])
+}
+
+model Session {
+    id           String   @id @default(cuid())
+    sessionToken String   @unique
+    userId       String
+    expires      DateTime
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+    identifier String
+    token      String   @unique
+    expires    DateTime
+
+    @@unique([identifier, token])
+}
+
+// Team model for enterprise subscriptions
+model Team {
+    id             String   @id @default(cuid())
+    name           String
+    ownerId        String
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+    planType       String   @default("TEAM_BASIC") // TEAM_BASIC, TEAM_PRO, ENTERPRISE
+    membersLimit   Int      @default(5)
+    subscriptionId String?
+
+    members     User[]
+    invitations TeamInvitation[]
+}
+
+model TeamInvitation {
+    id        String   @id @default(cuid())
+    email     String
+    token     String   @unique
+    teamId    String
+    expiresAt DateTime
+    role      String   @default("MEMBER") // MEMBER, ADMIN
+
+    team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+}
+
+// Farm model
+model Farm {
+    id          String   @id @default(cuid())
+    name        String
+    location    String
+    size        Float // in hectares
+    latitude    Float
+    longitude   Float
+    description String?  @db.Text
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    userId      String
+    imageUrl    String?
+    address     String?
+    country     String?
+    region      String?
+    soilType    String?
+    climate     String?
+    elevation   Float?
+
+    user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+    devices     Device[]
+    soilData    SoilData[]
+    crops       Crop[]
+    zones       Zone[]
+    alerts      Alert[]
+    actions     Action[]
+    notes       Note[]
+    reports     Report[]
+    weatherData WeatherData[]
+}
+
+// Zone model (for dividing farms into different areas)
+model Zone {
+    id          String   @id @default(cuid())
+    name        String
+    size        Float // in hectares
+    boundaries  Json? // GeoJSON for zone boundaries
+    farmId      String
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    description String?  @db.Text
+    soilType    String?
+    currentCrop String?
+
+    farm     Farm       @relation(fields: [farmId], references: [id], onDelete: Cascade)
+    devices  Device[]
+    soilData SoilData[]
+    crops    Crop[]
+}
+
+// Device model
+model Device {
+    id               String    @id @default(cuid())
+    deviceId         String    @unique // Unique identifier for the physical device
+    name             String
+    status           String    @default("INACTIVE") // ACTIVE, INACTIVE, MAINTENANCE
+    deviceType       String    @default("SOIL_SENSOR") // SOIL_SENSOR, WEATHER_STATION, IRRIGATION_CONTROLLER, CAMERA
+    lastActive       DateTime?
+    batteryLevel     Int?
+    signalStrength   Int?
+    createdAt        DateTime  @default(now())
+    updatedAt        DateTime  @updatedAt
+    farmId           String
+    zoneId           String?
+    firmwareVersion  String?
+    macAddress       String?
+    latitude         Float?
+    longitude        Float?
+    installationDate DateTime?
+    lastMaintenance  DateTime?
+    nextMaintenance  DateTime?
+
+    farm        Farm          @relation(fields: [farmId], references: [id], onDelete: Cascade)
+    zone        Zone?         @relation(fields: [zoneId], references: [id])
+    soilData    SoilData[]
+    alerts      Alert[]
+    actions     Action[]
+    weatherData WeatherData[]
+}
+
+// SoilData model
+model SoilData {
+    id            String   @id @default(cuid())
+    pH            Float
+    nitrogen      Float // in ppm
+    phosphorus    Float // in ppm
+    potassium     Float // in ppm
+    moisture      Float // in %
+    temperature   Float // in Celsius
+    organicMatter Float? // in %
+    conductivity  Float? // in dS/m
+    salinity      Float? // in ppt
+    timestamp     DateTime @default(now())
+    deviceId      String
+    farmId        String
+    zoneId        String?
+    depth         Float? // in cm
+    quality       String? // POOR, FAIR, GOOD, EXCELLENT
+    notes         String?  @db.Text
+    imageUrl      String? // URL to an image of the soil sample
+
+    device           Device            @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+    farm             Farm              @relation(fields: [farmId], references: [id], onDelete: Cascade)
+    zone             Zone?             @relation(fields: [zoneId], references: [id])
+    recommendation   Recommendation?
+    alerts           Alert[]
+    actions          Action[]
+    MLRecommendation MLRecommendation?
+}
+
+// Recommendation model
+model Recommendation {
+    id                  String   @id @default(cuid())
+    soilDataId          String   @unique
+    crops               String[] // Array of recommended crop names
+    score               Int // Recommendation confidence (0-100)
+    remarks             String?  @db.Text
+    createdAt           DateTime @default(now())
+    fertilizers         Json? // Recommended fertilizers and amounts
+    irrigation          Json? // Irrigation recommendations
+    pestManagement      Json? // Pest management recommendations
+    expectedYield       Json? // Expected yield projections
+    carbonFootprint     Float? // Estimated carbon footprint
+    sustainabilityScore Float? // Sustainability score (0-100)
+    aiModelVersion      String? // Version of AI model used for recommendation
+
+    soilData SoilData @relation(fields: [soilDataId], references: [id], onDelete: Cascade)
+}
+
+// Crop model
+model Crop {
+    id             String    @id @default(cuid())
+    name           String
+    scientificName String?
+    plantingDate   DateTime?
+    harvestDate    DateTime?
+    status         String    @default("PLANNED") // PLANNED, PLANTED, GROWING, HARVESTED
+    area           Float? // in hectares
+    yield          Float? // in kg/hectare
+    farmId         String
+    zoneId         String?
+    createdAt      DateTime  @default(now())
+    updatedAt      DateTime  @updatedAt
+    seedType       String?
+    variety        String?
+    growthStage    String?
+    expectedYield  Float?
+    actualYield    Float?
+    qualityGrade   String?
+    harvestMethod  String?
+    notes          String?   @db.Text
+    imageUrl       String?
+    cropCategory   String    @default("OTHER")
+
+    farm    Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+    zone    Zone?    @relation(fields: [zoneId], references: [id])
+    actions Action[]
+}
+
+// Alert model
+model Alert {
+    id              String    @id @default(cuid())
+    type            String // LOW_PH, HIGH_TEMP, LOW_MOISTURE, BATTERY_LOW, etc.
+    message         String
+    severity        String    @default("INFO") // INFO, WARNING, CRITICAL
+    isRead          Boolean   @default(false)
+    createdAt       DateTime  @default(now())
+    userId          String
+    farmId          String?
+    deviceId        String?
+    soilDataId      String?
+    resolvedAt      DateTime?
+    resolvedBy      String?
+    resolutionNotes String?   @db.Text
+    actions         String?   @db.Text // Suggested actions
+
+    user     User      @relation(fields: [userId], references: [id])
+    farm     Farm?     @relation(fields: [farmId], references: [id])
+    device   Device?   @relation(fields: [deviceId], references: [id])
+    soilData SoilData? @relation(fields: [soilDataId], references: [id])
+}
+
+// Weather model
+model WeatherData {
+    id            String   @id @default(cuid())
+    farmId        String
+    deviceId      String?
+    date          DateTime
+    temperature   Float // in Celsius
+    humidity      Float // in %
+    precipitation Float // in mm
+    windSpeed     Float // in km/h
+    windDirection Float? // in degrees
+    pressure      Float? // in hPa
+    uvIndex       Float?
+    visibility    Float? // in km
+    cloudCover    Float? // in %
+    conditions    String
+    forecast      Boolean  @default(false) // false = historical, true = forecast
+    createdAt     DateTime @default(now())
+
+    farm   Farm    @relation(fields: [farmId], references: [id], onDelete: Cascade)
+    device Device? @relation(fields: [deviceId], references: [id])
+}
+
+// Action model (for tracking farm activities)
+model Action {
+    id            String    @id @default(cuid())
+    type          String // FERTILIZATION, IRRIGATION, PLANTING, HARVESTING, PESTICIDE, etc.
+    description   String
+    status        String    @default("PLANNED") // PLANNED, IN_PROGRESS, COMPLETED, CANCELLED
+    plannedDate   DateTime?
+    completedDate DateTime?
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+    userId        String
+    farmId        String
+    deviceId      String?
+    cropId        String?
+    soilDataId    String?
+    cost          Float?
+    laborHours    Float?
+    notes         String?   @db.Text
+    imageUrl      String?
+
+    user     User      @relation(fields: [userId], references: [id])
+    farm     Farm      @relation(fields: [farmId], references: [id])
+    device   Device?   @relation(fields: [deviceId], references: [id])
+    crop     Crop?     @relation(fields: [cropId], references: [id])
+    soilData SoilData? @relation(fields: [soilDataId], references: [id])
+}
+
+// Note model (for adding notes to various entities)
+model Note {
+    id        String   @id @default(cuid())
+    content   String   @db.Text
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    userId    String
+    farmId    String?
+
+    user User  @relation(fields: [userId], references: [id])
+    farm Farm? @relation(fields: [farmId], references: [id])
+}
+
+// Report model (for generating farm reports)
+model Report {
+    id         String   @id @default(cuid())
+    type       String // SOIL_HEALTH, CROP_YIELD, FARM_EFFICIENCY, etc.
+    format     String   @default("PDF") // PDF, CSV, EXCEL
+    url        String? // URL to the generated report
+    createdAt  DateTime @default(now())
+    farmId     String
+    dateRange  Json? // Start and end dates for the report
+    parameters Json? // Additional parameters for report generation
+
+    farm Farm @relation(fields: [farmId], references: [id])
+}
+
+// ML Recommendation model for crop recommendations
+model MLRecommendation {
+    id              String   @id @default(cuid())
+    soilData        SoilData @relation(fields: [soilDataId], references: [id])
+    soilDataId      String   @unique
+    recommendedCrop String
+    confidence      Float
+    alternatives    Json // Array of alternative crops with probabilities
+    advice          Json // Object with different advice categories
+    modelType       String // Type of ML model used
+    timestamp       DateTime @default(now())
+
+    @@index([soilDataId])
+}
+
+// Enum definitions
+enum Role {
+    USER
+    ADMIN
+    FARM_MANAGER
+}
+
+enum DeviceStatus {
+    ACTIVE
+    INACTIVE
+    MAINTENANCE
+}
+
+enum DeviceType {
+    SOIL_SENSOR
+    WEATHER_STATION
+    IRRIGATION_CONTROLLER
+    CAMERA
+    OTHER
+}
+
+enum CropStatus {
+    PLANNED
+    PLANTED
+    GROWING
+    HARVESTED
+    FAILED
+}
+
+enum CropCategory {
+    VEGETABLE
+    FRUIT
+    GRAIN
+    PULSE
+    OILSEED
+    FIBER
+    SPICE
+    OTHER
+}
+
+enum AlertSeverity {
+    INFO
+    WARNING
+    CRITICAL
+}
+
+enum SubscriptionTier {
+    FREE
+    BASIC
+    PRO
+    ENTERPRISE
+}
+
+enum ActionStatus {
+    PLANNED
+    IN_PROGRESS
+    COMPLETED
+    CANCELLED
+}
+
+enum ActionType {
+    FERTILIZATION
+    IRRIGATION
+    PLANTING
+    HARVESTING
+    PESTICIDE
+    MAINTENANCE
+    OTHER
+}
+
+enum SoilQuality {
+    POOR
+    FAIR
+    GOOD
+    EXCELLENT
+}

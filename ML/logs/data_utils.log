@@ -1,0 +1,7 @@
+2025-05-24 22:12:19,641 - __main__ - INFO - Starting model training process
+2025-05-24 22:12:23,809 - urllib3.connectionpool - WARNING - Retrying (JitteredRetry(total=6, connect=6, read=7, redirect=7, status=7)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001F4F6E99E80>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it')': /api/2.0/mlflow/experiments/get-by-name?experiment_name=crop_recommendation
+2025-05-24 22:12:31,899 - urllib3.connectionpool - WARNING - Retrying (JitteredRetry(total=5, connect=5, read=7, redirect=7, status=7)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001F4F5C6A490>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it')': /api/2.0/mlflow/experiments/get-by-name?experiment_name=crop_recommendation
+2025-05-24 22:14:54,970 - __main__ - INFO - Starting model training process
+2025-05-24 22:14:54,970 - utils.model_utils - INFO - Skipping MLflow initialization as requested by environment variable
+2025-05-24 22:14:54,970 - __main__ - INFO - Generating synthetic data with 100 samples
+2025-05-24 22:14:54,971 - __main__ - ERROR - Error in model training: name 'generate_synthetic_data' is not defined

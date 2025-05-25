@@ -1,0 +1,5 @@
+# Minimal ML Pipeline Requirements
+scikit-learn
+pandas
+numpy
+joblib 

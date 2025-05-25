@@ -1,0 +1,15 @@
+
+# Environment variables
+.env
+
+# Node modules
+node_modules
+
+
+# Next.js
+.next
+
+
+.vscode
+
+

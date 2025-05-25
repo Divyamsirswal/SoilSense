@@ -159,15 +159,6 @@ The app allows you to:
 - Monitor sensor status
 - Update firmware wirelessly
 
-## 📚 Further Information
-
-Need more details? Check our comprehensive documentation:
-
-- [Video Tutorial](https://youtube.com/watch?v=soilguardian-setup)
-- [Full Documentation](https://docs.soilguardian.com)
-- [Community Forum](https://community.soilguardian.com)
-
----
 
 **Remember**: Place your sensor in representative soil for your field, away from unusual conditions (like very wet areas or recently fertilized spots) for the most accurate readings.
 

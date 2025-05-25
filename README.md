@@ -2,7 +2,7 @@
 
 SoilGuardian is a full-stack smart farming solution that combines IoT sensors, real-time soil monitoring, and AI-powered crop recommendations to help farmers make data-driven decisions.
 
-![SoilGuardian Dashboard](blank)
+![](public/image.png)
 
 ## 🌱 Features
 

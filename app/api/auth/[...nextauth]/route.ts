@@ -4,7 +4,8 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-export const authOptions: NextAuthOptions = {
+// Define authOptions separately but don't export it directly from this file
+const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: "jwt",
@@ -134,5 +135,11 @@ export const authOptions: NextAuthOptions = {
   debug: process.env.NODE_ENV === "development",
 };
 
+// Create handler with the options
 const handler = NextAuth(authOptions);
+
+// Export the handler functions directly
 export { handler as GET, handler as POST };
+
+// Export auth options from a separate file to avoid the type error
+// Create auth-options.ts in the same directory and import from there when needed

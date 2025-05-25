@@ -36,14 +36,12 @@ export default function LoginPage() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (status === "authenticated") {
       router.push(from);
     }
   }, [status, router, from]);
 
-  // Handle registration success
   useEffect(() => {
     if (registered === "true") {
       setSuccessMessage(

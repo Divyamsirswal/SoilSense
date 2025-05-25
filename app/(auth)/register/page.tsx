@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -19,7 +19,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
   const { toast } = useToast();
   const { status } = useSession();
@@ -282,5 +282,22 @@ export default function RegisterPage() {
         </form>
       </Card>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center p-4">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <RegisterContent />
+    </Suspense>
   );
 }

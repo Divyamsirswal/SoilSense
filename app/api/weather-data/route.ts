@@ -3,15 +3,57 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/auth-options";
 import { prisma } from "@/lib/prisma";
 
+// Force dynamic route
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+interface WeatherCondition {
+  conditions: string;
+  icon: string;
+}
+
+interface WeatherAlert {
+  id: string;
+  type: string;
+  severity: string;
+  message: string;
+  details: string;
+}
+
+interface WeatherDataWithExtras extends WeatherData {
+  conditions?: string;
+  icon?: string;
+  maxTemp?: number;
+  minTemp?: number;
+  avgTemp?: number;
+  farm?: {
+    name: string;
+    location: string;
+  };
+}
+
+interface WeatherData {
+  id: string;
+  farmId: string;
+  date: Date;
+  temperature: number;
+  humidity: number;
+  precipitation: number;
+  forecast: boolean;
+}
+
 // Weather conditions based on parameters
 function determineWeatherCondition(
   temperature: number,
   humidity: number,
   precipitation: number
-) {
-  if (precipitation > 70) return { conditions: "Heavy Rain", icon: "cloud-rain" };
-  if (precipitation > 40) return { conditions: "Rain Showers", icon: "cloud-rain" };
-  if (precipitation > 20) return { conditions: "Scattered Showers", icon: "cloud-drizzle" };
+): WeatherCondition {
+  if (precipitation > 70)
+    return { conditions: "Heavy Rain", icon: "cloud-rain" };
+  if (precipitation > 40)
+    return { conditions: "Rain Showers", icon: "cloud-rain" };
+  if (precipitation > 20)
+    return { conditions: "Scattered Showers", icon: "cloud-drizzle" };
   if (humidity > 80) return { conditions: "Cloudy", icon: "cloud" };
   if (humidity > 60) return { conditions: "Partly Cloudy", icon: "cloud" };
   return { conditions: "Sunny", icon: "sun" };
@@ -56,7 +98,7 @@ export async function GET(request: Request) {
     };
 
     // Get current weather (most recent non-forecast record)
-    let current = null;
+    let current: WeatherDataWithExtras | null = null;
     if (type === "all" || type === "current") {
       const currentData = await prisma.weatherData.findFirst({
         where: {
@@ -83,7 +125,7 @@ export async function GET(request: Request) {
     }
 
     // Get forecast data (next 7 days)
-    let forecast = [];
+    let forecast: WeatherDataWithExtras[] = [];
     if (type === "all" || type === "forecast") {
       const forecastData = await prisma.weatherData.findMany({
         where: {
@@ -118,7 +160,7 @@ export async function GET(request: Request) {
     }
 
     // Get historical data (past 7 days)
-    let historical = [];
+    let historical: WeatherDataWithExtras[] = [];
     if (type === "all" || type === "historical") {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -145,7 +187,7 @@ export async function GET(request: Request) {
     }
 
     // Generate an alert if there's high precipitation in the forecast
-    let alerts = [];
+    let alerts: WeatherAlert[] = [];
     if (forecast.some((day) => day.precipitation > 60)) {
       alerts.push({
         id: "weather-alert-1",
@@ -170,4 +212,4 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

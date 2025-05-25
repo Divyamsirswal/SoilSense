@@ -3,6 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/auth-options";
 import { prisma } from "@/lib/prisma";
 
+// Force dynamic route
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);

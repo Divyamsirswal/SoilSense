@@ -19,6 +19,11 @@ const nextConfig = {
     typescript: {
         ignoreBuildErrors: true,
     },
+    // Configure static exports
+    output: 'standalone',
+    experimental: {
+        serverActions: true,
+    },
 }
 
 module.exports = nextConfig 

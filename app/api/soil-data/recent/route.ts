@@ -3,6 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/auth-options";
 import { prisma } from "@/lib/prisma";
 
+// Force dynamic route
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -31,24 +35,26 @@ export async function GET(request: Request) {
       select: { id: true },
     });
 
-    const farmIds = farms.map(farm => farm.id);
-    
+    const farmIds = farms.map((farm) => farm.id);
+
     // For each farm, get the latest soil data
     const recentSoilDataPromises = farmIds.map(async (farmId) => {
       const latestReading = await prisma.soilData.findFirst({
         where: {
-          farmId: farmId
+          farmId: farmId,
         },
         orderBy: {
-          timestamp: 'desc'
-        }
+          timestamp: "desc",
+        },
       });
-      
+
       return latestReading;
     });
-    
+
     // Wait for all promises to resolve
-    const recentSoilData = (await Promise.all(recentSoilDataPromises)).filter(Boolean);
+    const recentSoilData = (await Promise.all(recentSoilDataPromises)).filter(
+      Boolean
+    );
 
     return NextResponse.json({
       data: recentSoilData,
@@ -60,4 +66,4 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-} 
+}
